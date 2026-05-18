@@ -3382,14 +3382,16 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 						    pte, p, ctx);
 						found = 1;
 					}
+					plen = pte->prefixlen - 1;
+					pte = NULL;
 					if (!found &&
 					    req->prefixlen == hostplen) {
-						for (plen = pte->prefixlen - 1;
-						    plen >= 0; plen--) {
+						while (plen >= 0) {
 							pte = pt_get(
 							    &req->prefix, plen);
 							if (pte != NULL)
 								break;
+							plen--;
 						}
 					}
 				} while (!found && pte != NULL);
