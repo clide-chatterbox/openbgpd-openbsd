@@ -530,7 +530,8 @@ adjout_prefix_next(struct rde_peer *peer, struct pt_entry *pte,
  */
 void
 adjout_prefix_update(struct adjout_prefix *p, struct rde_peer *peer,
-    struct filterstate *state, struct pt_entry *pte, uint32_t path_id_tx)
+    struct filterstate *state, struct pt_entry *pte, uint32_t path_id_tx,
+    int force_update)
 {
 	struct adjout_attr *attrs;
 
@@ -552,6 +553,8 @@ adjout_prefix_update(struct adjout_prefix *p, struct rde_peer *peer,
 		    attrs->communities) &&
 		    path_equal(&state->aspath, attrs->aspath)) {
 			/* nothing changed */
+			if (force_update && peer_is_up(peer))
+				pend_prefix_add(peer, attrs, pte, path_id_tx);
 			return;
 		}
 
