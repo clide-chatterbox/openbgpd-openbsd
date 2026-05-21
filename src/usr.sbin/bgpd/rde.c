@@ -3207,10 +3207,14 @@ rde_dump_upcall(struct rib_entry *re, void *ptr)
 }
 
 static void
-rde_dump_adjout_upcall(struct rde_peer *peer, struct pt_entry *pte,
-    struct adjout_prefix *p, void *ptr)
+rde_dump_adjout_upcall(struct pt_entry *pte, struct adjout_prefix *p,
+    uint32_t bid, void *ptr)
 {
 	struct rde_dump_ctx	*ctx = ptr;
+	struct rde_peer		*peer;
+
+	if ((peer = peer_get(ctx->peerid)) == NULL)
+		return;
 
 	rde_dump_adjout_filter(peer, pte, p, &ctx->req);
 }
@@ -3312,6 +3316,7 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 		ctx->peerid = peer->conf.id;
 		switch (ctx->req.type) {
 		case IMSG_CTL_SHOW_RIB:
+			LIST_INSERT_HEAD(&rde_dump_h, ctx, entry);
 			if (adjout_prefix_dump_new(peer, ctx->req.aid,
 			    CTL_MSG_HIGH_MARK, ctx, rde_dump_adjout_upcall,
 			    rde_dump_done, rde_dump_throttled) == -1)
@@ -3319,6 +3324,7 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 			break;
 		case IMSG_CTL_SHOW_RIB_PREFIX:
 			if (req->flags & F_LONGER) {
+				LIST_INSERT_HEAD(&rde_dump_h, ctx, entry);
 				if (adjout_prefix_dump_subtree(peer,
 				    &req->prefix, req->prefixlen,
 				    CTL_MSG_HIGH_MARK, ctx,
@@ -3342,7 +3348,12 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 
 			do {
 				struct pt_entry *pte;
+				uint32_t bid = peer->adjout_bid;
 				int found;
+
+				ctx->peerid = peer->conf.id;
+				if (bid == 0)
+					continue;
 
 				if (req->flags & F_SHORTER) {
 					for (plen = 0; plen <= req->prefixlen;
@@ -3353,12 +3364,12 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 							continue;
 						/* dump all matching paths */
 						for (p = adjout_prefix_first(
-						    peer, pte);
+						    pte, bid);
 						    p != NULL;
-						    p = adjout_prefix_next(
-						    peer, pte, p)) {
+						    p = adjout_prefix_next(pte,
+						        bid, p)) {
 							rde_dump_adjout_upcall(
-							    peer, pte, p, ctx);
+							    pte, p, bid, ctx);
 						}
 					}
 					continue;
@@ -3374,12 +3385,12 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 				do {
 					/* dump all matching paths */
 					found = 0;
-					for (p = adjout_prefix_first(peer, pte);
+					for (p = adjout_prefix_first(pte, bid);
 					    p != NULL;
-					    p = adjout_prefix_next(peer, pte,
+					    p = adjout_prefix_next(pte, bid,
 					    p)) {
-						rde_dump_adjout_upcall(peer,
-						    pte, p, ctx);
+						rde_dump_adjout_upcall(pte, p,
+						    bid, ctx);
 						found = 1;
 					}
 					plen = pte->prefixlen - 1;
@@ -3396,7 +3407,7 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 					}
 				} while (!found && pte != NULL);
 			} while ((peer = peer_match(&req->neighbor,
-			    peer->conf.id)));
+			    ctx->peerid)) != NULL);
 
 			imsg_compose(ibuf_se_ctl, IMSG_CTL_END, 0, ctx->req.pid,
 			    -1, NULL, 0);
@@ -3410,8 +3421,6 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 			free(ctx);
 			return;
 		}
-
-		LIST_INSERT_HEAD(&rde_dump_h, ctx, entry);
 		return;
 	} else if ((rid = rib_find(req->rib)) == RIB_NOTFOUND) {
 		log_warnx("%s: no such rib %s", __func__, req->rib);
@@ -3649,9 +3658,10 @@ rde_evaluate_all(void)
 
 /* flush Adj-RIB-Out by withdrawing all prefixes */
 static void
-rde_up_flush_upcall(struct rde_peer *peer, struct pt_entry *pte,
-    struct adjout_prefix *p, void *ptr)
+rde_up_flush_upcall(struct pt_entry *pte, struct adjout_prefix *p,
+    uint32_t bid, void *ptr)
 {
+	struct rde_peer *peer = ptr;
 	adjout_prefix_withdraw(peer, pte, p);
 }
 

@@ -513,9 +513,11 @@ peer_down(struct rde_peer *peer)
  * RIB walker callback for peer_delete / the reaper.
  */
 static void
-peer_reaper_upcall(struct rde_peer *peer, struct pt_entry *pte,
-    struct adjout_prefix *p, void *ptr)
+peer_reaper_upcall(struct pt_entry *pte, struct adjout_prefix *p,
+    uint32_t bid, void *ptr)
 {
+	struct rde_peer		*peer = ptr;
+
 	adjout_prefix_withdraw(peer, pte, p);
 }
 
@@ -617,9 +619,11 @@ peer_stale(struct rde_peer *peer, uint8_t aid, int flushall)
  * Enqueue a prefix onto the update queue so it can be sent out.
  */
 static void
-peer_blast_upcall(struct rde_peer *peer, struct pt_entry *pte,
-    struct adjout_prefix *p, void *ptr)
+peer_blast_upcall(struct pt_entry *pte, struct adjout_prefix *p,
+    uint32_t bid, void *ptr)
 {
+	struct rde_peer		*peer = ptr;
+
 	pend_prefix_add(peer, p->attrs, pte, p->path_id_tx);
 }
 

@@ -226,7 +226,7 @@ up_generate_updates(struct rde_peer *peer, struct rib_entry *re,
 	struct prefix		*new;
 	struct adjout_prefix	*p;
 
-	p = adjout_prefix_first(peer, re->prefix);
+	p = adjout_prefix_first(re->prefix, peer->adjout_bid);
 
 	new = prefix_best(re);
 	while (new != NULL) {
@@ -271,8 +271,9 @@ up_generate_addpath(struct rde_peer *peer, struct rib_entry *re,
 	unsigned int		pidx = 0, i;
 
 	/* collect all current paths */
-	head = adjout_prefix_first(peer, re->prefix);
-	for (p = head; p != NULL; p = adjout_prefix_next(peer, re->prefix, p)) {
+	head = adjout_prefix_first(re->prefix, peer->adjout_bid);
+	for (p = head; p != NULL;
+	    p = adjout_prefix_next(re->prefix, peer->adjout_bid, p)) {
 		addpath_prefix_list[pidx++] = p->path_id_tx;
 		if (pidx >= nitems(addpath_prefix_list))
 			fatalx("too many addpath paths to select from");
@@ -450,7 +451,7 @@ up_generate_default(struct rde_peer *peer, uint8_t aid)
 	pte = pt_get(&addr, 0);
 	if (pte == NULL)
 		pte = pt_add(&addr, 0);
-	p = adjout_prefix_first(peer, pte);
+	p = adjout_prefix_first(pte, peer->adjout_bid);
 	adjout_prefix_update(p, peer, &state, pte, 0, 1);
 	rde_filterstate_clean(&state);
 
