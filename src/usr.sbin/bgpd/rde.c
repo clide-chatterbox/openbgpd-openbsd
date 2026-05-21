@@ -3316,7 +3316,6 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 		ctx->peerid = peer->conf.id;
 		switch (ctx->req.type) {
 		case IMSG_CTL_SHOW_RIB:
-			LIST_INSERT_HEAD(&rde_dump_h, ctx, entry);
 			if (adjout_prefix_dump_new(peer, ctx->req.aid,
 			    CTL_MSG_HIGH_MARK, ctx, rde_dump_adjout_upcall,
 			    rde_dump_done, rde_dump_throttled) == -1)
@@ -3324,7 +3323,6 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 			break;
 		case IMSG_CTL_SHOW_RIB_PREFIX:
 			if (req->flags & F_LONGER) {
-				LIST_INSERT_HEAD(&rde_dump_h, ctx, entry);
 				if (adjout_prefix_dump_subtree(peer,
 				    &req->prefix, req->prefixlen,
 				    CTL_MSG_HIGH_MARK, ctx,
@@ -3421,6 +3419,8 @@ rde_dump_ctx_new(struct ctl_show_rib_request *req, pid_t pid,
 			free(ctx);
 			return;
 		}
+
+		LIST_INSERT_HEAD(&rde_dump_h, ctx, entry);
 		return;
 	} else if ((rid = rib_find(req->rib)) == RIB_NOTFOUND) {
 		log_warnx("%s: no such rib %s", __func__, req->rib);

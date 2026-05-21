@@ -616,6 +616,10 @@ adjout_prefix_dump_r(struct rib_context *ctx)
 	struct adjout_prefix *p;
 	unsigned int i;
 
+	/* no adjout_bid -> no adj-rib-out */
+	if (ctx->ctx_id == 0)
+		goto done;
+
 	if (ctx->ctx_pt == NULL && ctx->ctx_subtree.aid == AID_UNSPEC)
 		pte = pt_first(ctx->ctx_aid);
 	else
@@ -645,6 +649,7 @@ adjout_prefix_dump_r(struct rib_context *ctx)
 		ctx->ctx_prefix_call(pte, p, ctx->ctx_id, ctx->ctx_arg);
 	}
 
+ done:
 	if (ctx->ctx_done)
 		ctx->ctx_done(ctx->ctx_arg, ctx->ctx_aid);
 	LIST_REMOVE(ctx, entry);
@@ -659,13 +664,6 @@ adjout_prefix_dump_new(struct rde_peer *peer, uint8_t aid,
     int (*throttle)(void *))
 {
 	struct rib_context *ctx;
-
-	/* no adjout_bid -> no adj-rib-out */
-	if (peer->adjout_bid == 0) {
-		if (done)
-			done(arg, aid);
-		return 0;
-	}
 
 	if ((ctx = calloc(1, sizeof(*ctx))) == NULL)
 		return -1;
@@ -694,13 +692,6 @@ adjout_prefix_dump_subtree(struct rde_peer *peer, struct bgpd_addr *subtree,
     int (*throttle)(void *))
 {
 	struct rib_context *ctx;
-
-	/* no adjout_bid -> no adj-rib-out */
-	if (peer->adjout_bid == 0) {
-		if (done)
-			done(arg, subtree->aid);
-		return 0;
-	}
 
 	if ((ctx = calloc(1, sizeof(*ctx))) == NULL)
 		return -1;

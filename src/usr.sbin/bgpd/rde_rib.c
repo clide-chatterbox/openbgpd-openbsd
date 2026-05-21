@@ -507,7 +507,7 @@ rib_dump_abort(uint16_t id)
 	struct rib_context *ctx, *next;
 
 	LIST_FOREACH_SAFE(ctx, &rib_dumps, entry, next) {
-		if (id != ctx->ctx_id)
+		if (ctx->ctx_re != NULL && id != ctx->ctx_id)
 			continue;
 		rib_dump_free(ctx);
 	}
