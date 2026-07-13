@@ -791,6 +791,7 @@ int		 adjout_prefix_dump_subtree(struct rde_peer *,
 		    void (*)(struct pt_entry *, struct adjout_prefix *,
 		    uint32_t, void *),
 		    void (*)(void *, uint8_t), int (*)(void *));
+void		 adjout_prefix_collect(struct pt_entry *);
 void		 adjout_peer_init(struct rde_peer *);
 void		 adjout_peer_flush_pending(struct rde_peer *);
 void		 adjout_peer_free(struct rde_peer *);
