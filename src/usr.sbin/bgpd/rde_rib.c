@@ -41,12 +41,6 @@ uint16_t rib_size;
 struct rib **ribs;
 struct rib flowrib = { .id = 1, .tree = RB_INITIALIZER(&flowrib.tree) };
 
-struct pq_entry {
-	TAILQ_ENTRY(pq_entry)	 entry;
-	struct prefix		*p;	/* NULL for withdraws */
-	uint32_t		 path_id_tx;
-};
-
 struct rib_entry *rib_add(struct rib *, struct pt_entry *);
 static inline int rib_compare(const struct rib_entry *,
 			const struct rib_entry *);

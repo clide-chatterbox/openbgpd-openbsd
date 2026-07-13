@@ -321,6 +321,12 @@ struct prefix {
 #define	NEXTHOP_MASK		0x0f
 #define	NEXTHOP_VALID		0x80
 
+struct pq_entry {
+	TAILQ_ENTRY(pq_entry)	 entry;
+	struct prefix		*p;	/* NULL for withdraws */
+	uint32_t		 path_id_tx;
+};
+
 struct adjout_attr {
 	uint64_t		 hash;
 	struct rde_aspath	*aspath;
@@ -359,6 +365,7 @@ struct filterstate {
 
 enum eval_mode {
 	EVAL_NONE,
+	EVAL_SYNC,
 	EVAL_REEVAL,
 	EVAL_DEFAULT,
 	EVAL_ALL,
@@ -777,7 +784,7 @@ struct adjout_prefix	*adjout_prefix_next(struct pt_entry *, uint32_t,
 void		 adjout_prefix_update(struct adjout_prefix *, struct rde_peer *,
 		    struct filterstate *, struct pt_entry *, uint32_t, int);
 void		 adjout_prefix_withdraw(struct rde_peer *, struct pt_entry *,
-		    struct adjout_prefix *);
+		    struct adjout_prefix *, int);
 void		 adjout_prefix_reaper(struct rde_peer *);
 void		 adjout_prefix_dump_cleanup(struct rib_context *);
 void		 adjout_prefix_dump_r(struct rib_context *);
@@ -808,9 +815,12 @@ void		 pend_prefix_stats(struct ch_stats *);
 void		 adjout_attr_stats(struct ch_stats *);
 
 /* rde_update.c */
-void	 up_generate_updates(struct rde_peer *, struct rib_entry *, int);
-void	 up_generate_addpath(struct rde_peer *, struct rib_entry *, int);
-void	 up_generate_addpath_all(struct rde_peer *, struct rib_entry *, int);
+void	 up_generate_updates(struct rde_peer *, struct rib_entry *,
+	    enum eval_mode);
+void	 up_generate_addpath(struct rde_peer *, struct rib_entry *,
+	    enum eval_mode);
+void	 up_generate_addpath_all(struct rde_peer *, struct rib_entry *,
+	    enum eval_mode);
 void	 up_generate_default(struct rde_peer *, uint8_t);
 int	 up_is_eor(struct rde_peer *, uint8_t);
 void	 up_dump_withdraws(struct imsgbuf *, struct rde_peer *, uint8_t);

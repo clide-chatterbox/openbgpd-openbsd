@@ -3671,7 +3671,7 @@ rde_up_flush_upcall(struct pt_entry *pte, struct adjout_prefix *p,
 {
 	struct rde_peer *peer = ptr;
 
-	adjout_prefix_withdraw(peer, pte, p);
+	adjout_prefix_withdraw(peer, pte, p, 0);
 }
 
 int
