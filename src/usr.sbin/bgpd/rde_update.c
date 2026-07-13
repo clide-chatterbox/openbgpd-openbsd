@@ -398,6 +398,7 @@ up_generate_addpath_all(struct rde_peer *peer, struct rib_entry *re,
 			switch (up_process_prefix(peer, pq->p, (void *)-1,
 			    mode)) {
 			case UP_OK:
+				continue;
 			case UP_FILTERED:
 			case UP_EXCLUDED:
 				break;
@@ -405,11 +406,11 @@ up_generate_addpath_all(struct rde_peer *peer, struct rib_entry *re,
 				/* just give up */
 				return;
 			}
-		} else {
-			p = adjout_prefix_get(peer, pq->path_id_tx, pte);
-			if (p != NULL)
-				adjout_prefix_withdraw(peer, pte, p, 0);
 		}
+
+		p = adjout_prefix_get(peer, pq->path_id_tx, pte);
+		if (p != NULL)
+			adjout_prefix_withdraw(peer, pte, p, 0);
 	}
 }
 
